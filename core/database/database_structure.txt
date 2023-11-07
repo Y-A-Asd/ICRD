@@ -1,0 +1,79 @@
+
+CREATE TABLE IF NOT EXISTS Department (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(20)
+);
+
+
+CREATE TABLE IF NOT EXISTS Employee (
+    id INTEGER PRIMARY KEY,
+    account VARCHAR(255) NOT NULL,
+    department_id INTEGER REFERENCES Department(id),
+    phone VARCHAR(20),
+    FOREIGN KEY (department_id) REFERENCES Department(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS Project (
+    id INTEGER PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    department_id INTEGER REFERENCES Department(id),
+    time_end_estimated TIMESTAMP,
+    time_end TIMESTAMP,
+    FOREIGN KEY (department_id) REFERENCES Department(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS EmployeeProjectRelation (
+    id INTEGER PRIMARY KEY,
+    employee_id INTEGER REFERENCES Employee(id),
+    project_id INTEGER REFERENCES Project(id),
+    hours INTEGER,
+    role VARCHAR(255),
+    FOREIGN KEY (employee_id) REFERENCES Employee(id),
+    FOREIGN KEY (project_id) REFERENCES Project(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS Attendance (
+    id INTEGER PRIMARY KEY,
+    employee_id INTEGER REFERENCES Employee(id),
+    date DATE,
+    time_in TIME,
+    time_out TIME,
+    cause_late TEXT,
+    FOREIGN KEY (employee_id) REFERENCES Employee(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS Salary (
+    id INTEGER PRIMARY KEY,
+    employee_id INTEGER REFERENCES Employee(id),
+    base DECIMAL,
+    tax DECIMAL,
+    insurance DECIMAL,
+    overtime DECIMAL,
+    FOREIGN KEY (employee_id) REFERENCES Employee(id)
+);
+
+CREATE TABLE IF NOT EXISTS Payment (
+    id INTEGER PRIMARY KEY,
+    amount DECIMAL,
+    number_account VARCHAR(255),
+    type_payment VARCHAR(255),
+    description TEXT,
+    date DATE
+);
+
+
+CREATE TABLE IF NOT EXISTS Payslip (
+    id INTEGER PRIMARY KEY,
+    base DECIMAL,
+    tax DECIMAL,
+    insurance DECIMAL,
+    overtime DECIMAL,
+    salary DECIMAL,
+    payment_id INTEGER REFERENCES Payment(id),
+    FOREIGN KEY (payment_id) REFERENCES Payment(id)
+);
