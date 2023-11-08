@@ -1,8 +1,7 @@
-from core.database.engine import engine
 from sqlalchemy import insert, Table
 from sqlalchemy.orm import Session
-from core.classes.classes_structure import Base,Department,Employee,Payment,Payslip,Project,Employeeprojectrelation,Attendance,Salary
-from sqlalchemy.exc import IntegrityError,NoSuchTableError,InternalError
+from core.database.classes_structure import Base
+from sqlalchemy.exc import IntegrityError, InternalError
 
 def exeption_dec(func):
     def wrapper(self, *args, **kwargs):
