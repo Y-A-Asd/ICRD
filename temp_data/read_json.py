@@ -1,5 +1,5 @@
 import json
-from temp_data.insertion import Insertion
+from core.crud.insertion import Insertion
 
 def manage_data(conn):
     insertion = Insertion(conn)

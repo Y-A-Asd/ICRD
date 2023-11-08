@@ -1,6 +1,6 @@
 from sqlalchemy import insert, Table
 from sqlalchemy.orm import Session
-from core.database.classes_structure import Base
+from core.database.classes_structure import Base,Department
 from sqlalchemy.exc import IntegrityError, InternalError
 
 def exeption_dec(func):
@@ -23,8 +23,6 @@ class Insertion:
     def insert_data(self, table_name:str, column_data):
         table = Table(table_name.capitalize(), Base.metadata, autoload_with=self.conn)
         insertion = insert(table).values(**column_data)
-        # print(column_data)
         self.conn.execute(insertion)
-
 
 
