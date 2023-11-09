@@ -1,0 +1,54 @@
+--1
+SELECT SUM(total_dept) "total_dept" FROM (
+SELECT employee,SUM(base::DECIMAL+tax::DECIMAL+insurance::DECIMAL+overtime::DECIMAL) as "total_dept"
+FROM "Salary" WHERE  id NOT IN(SELECT id FROM "Payslip")
+GROUP BY employee) AS total_depts
+
+--2
+WITH overtimes AS (
+SELECT S.employee, SUM(P.overtime) overtime FROM "Salary" S JOIN "Payslip" P ON S.id = P.salary
+GROUP BY S.employee HAVING SUM(P.overtime) > ?)
+SELECT SUM(overtime) AS total_overtime FROM overtimes
+--3
+SELECT SUM(base+overtime+tax+insurance) AS total FROM "Salary" WHERE id IN (
+SELECT salary FROM "Payslip" WHERE payment IS NOT NULL)
+
+--4
+SELECT employee, SUM(hours) AS total
+FROM "Employeeprojectrelation" WHERE employee = ?
+GROUP BY employee
+--5
+SELECT S.employee, SUM(PA.amount)AS total_amount  FROM "Salary" S JOIN "Payslip" P ON S.id = P.salary
+JOIN public."Payment" PA on P.payment = PA.id
+GROUP BY S.employee HAVING SUM(PA.amount) > ?
+--6
+WITH emp AS(
+SELECT employee, SUM(hours) AS total
+FROM "Employeeprojectrelation"
+GROUP BY employee)
+SELECT employee FROM "Employeeprojectrelation" E JOIN emp USING(employee) WHERE emp.total = (SELECT MAX(total) FROM emp)
+--7
+WITH department_totals AS (
+  SELECT DISTINCT D.id AS department_id, SUM(P2.amount) AS total_payment
+  FROM "Department" D
+  JOIN "Employee" E ON D.id = E.department
+  JOIN "Salary" S ON E.id = S.employee
+  JOIN "Payslip" P ON S.id = P.salary
+  JOIN "Payment" P2 ON P2.id = P.payment
+  GROUP BY D.id)
+SELECT D.id,D.name,D.phone,D1.total_payment AS max_total FROM department_totals D1 JOIN "Department" D ON D.id = D1.department_id
+WHERE D1.total_payment = (SELECT MAX(total_payment) FROM department_totals)
+--8
+SELECT D.id,SUM(P.estimated_end_time-P.end_time) AS delta FROM "Department" D JOIN public."Project" P on D.id = P.department
+GROUP BY D.id ORDER BY delta DESC;
+--9
+SELECT E.id, E.account, E.phone,
+       (EXTRACT(HOUR FROM A.in_time::TIME) - EXTRACT(HOUR FROM ?::TIME)) :: INT || ':' ||
+       (EXTRACT(MINUTE FROM A.in_time::TIME) - EXTRACT(MINUTE FROM ?::TIME)) :: INT || ':' ||
+       (EXTRACT(SECOND FROM A.in_time::TIME) - EXTRACT(SECOND FROM ?::TIME)) :: INT AS time_diff
+FROM "Employee" E
+JOIN public."Attendance" A ON E.id = A.employee
+--10
+SELECT E.id FROM "Employee" E
+WHERE E.id NOT IN (
+SELECT employee FROM "Employeeprojectrelation")

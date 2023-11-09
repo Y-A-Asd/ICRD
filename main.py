@@ -1,8 +1,9 @@
 from core.database.engine import engine
 from core.database.classes_structure import Base
-from core.crud.selection import selection
-from core.crud.updation import Updation
-from core.crud.deletion import Deletion
+from core.database.classes import Department,MODEL,DatabaseConnectionManager
+from core.crudORM.selection import selection
+from core.crudORM.updation import Updation
+from core.crudORM.deletion import Deletion
 import time
 from temp_data.read_json import manage_data
 
@@ -17,9 +18,9 @@ from temp_data.read_json import manage_data
 # time.sleep(2)
 
 Base.metadata.create_all(engine)
-with engine.connect() as conn:
-    # temp data
-    manage_data(conn)
+# with engine.connect() as conn:
+    # temp dat
+    # manage_data(conn)
 
     #selection
     # select = selection(conn)
@@ -33,6 +34,13 @@ with engine.connect() as conn:
     #deletion
     # delp = Deletion(conn)
     # delp.delete("department", id=5)
+
+db=DatabaseConnectionManager(engine)
+model = MODEL(db)
+Department.conn = db
+d= Department.get(name="Dabfeed",id=4)
+print(d)
+
 
 
 

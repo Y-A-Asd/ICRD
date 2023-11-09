@@ -11,11 +11,15 @@ class Deletion:
         where_clause = and_(*[getattr(table.c, key) == value for key, value in kwargs.items()])
 
         deletion = delete(table).where(where_clause)
-        self.conn.execute(deletion)
+        try:
+            self.conn.execute(deletion)
+        except:
+            print("UPCOMMING")
+            return
         status = input("R u sure? (y/n): ")
         if status.lower() == "y":
             self.conn.commit()
         else:
-            self.conn.rolleback
+            self.conn.rollback()
 
 

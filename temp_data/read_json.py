@@ -1,5 +1,5 @@
 import json
-from core.crud.insertion import Insertion
+from core.crudORM.insertion import Insertion
 
 def manage_data(conn):
     insertion = Insertion(conn)

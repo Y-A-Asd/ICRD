@@ -8,7 +8,7 @@ def exeption_dec(func):
         session = Session(bind=self.conn)
         try:
             func(self, *args, **kwargs)
-            session.commit()
+            self.conn.commit()
         except (InternalError,IntegrityError) as e:
             print(f"Duplicate data or integrity constraint violation.\n{e}")
             session.rollback()  # Roll back the transaction in case of an error

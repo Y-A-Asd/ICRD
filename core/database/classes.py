@@ -1,47 +1,68 @@
-from typing import Any, List
+from typing import Any, List,Optional
 from core.database.engine import engine
-
+import dotenv
+import psycopg2
+import os
+dotenv.load_dotenv()
+host = os.getenv("host")
+database = os.getenv("database")
+password = os.getenv("password")
+user = os.getenv("user")
 
 class DatabaseConnectionManager:
+
     def __init__(self, engin: engine):
-        self.connection = engin.connect()
+        self.connection = psycopg2.connect(database=database,user=user,host=host)
 
     def close(self):
         self.connection.close()
 
     def execute(self, query, params=[]):
-        cursor = self.connection.cursor()
-        cursor.execute(query, params)
-        self.connection.commit()
+        with self.connection as conn:
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            conn.commit()
+            return cursor
 
 
 class MODEL:
+    __conn = None
+
     def __init__(self, conn: DatabaseConnectionManager) -> None:
         self.conn = conn
 
     @classmethod
-    def get(cls, conn: DatabaseConnectionManager, **kwargs) -> Any:
-        query = f"SELECT * FROM {cls.__name__} WHERE {', '.join([f'{key}=?' for key in kwargs.keys()])}"
-        params = list(kwargs.values())
-        results = conn.execute(query, params)
+    def from_id(cls, id: int) -> Optional:
+        query = f"SELECT * FROM {cls.__name__} WHERE id = ?"
+        params = [id]
+        results = cls.conn.execute(query, params)
         if len(results) == 1:
-            return cls(**results[0])
-        elif len(results) > 1:
-            raise ValueError(f"Multiple objects found for {cls.__name__} with kwargs {kwargs}")
+            return cls(cls.conn, **results[0])
         else:
             return None
 
     @classmethod
-    def filter(cls, conn: DatabaseConnectionManager, **kwargs):
+    def get(cls, **kwargs) -> Any:
+        query = f'SELECT * FROM "{cls.__name__}" WHERE {"AND ".join([f"{key} = %s" for key in kwargs.keys()])};'
+        params = list(kwargs.values())
+        result = cls.conn.execute(query, params)
+        data = result.fetchall()
+        try :
+            return cls(*data[0])
+        except IndexError:
+            return f"Multiple objects found for {cls.__name__} with kwargs {kwargs}"
 
-        cursor = conn.cursor()
+
+    @classmethod
+    def filter(cls, **kwargs):
+        cursor = cls.conn.cursor()
         query = f"SELECT * FROM {cls.__class__.__name__} WHERE {', '.join([f'{key}=?' for key in kwargs.keys()])}"
         params = list(kwargs.values())
 
         cursor.execute(query, params)
         rows = cursor.fetchall()
 
-        return [cls(conn, **{key: value for key, value in zip(cls.__dict__.keys(), row)}) for row in rows]
+        return [cls(cls.conn, **{key: value for key, value in zip(cls.__dict__.keys(), row)}) for row in rows]
 
     def save(self) -> None:
         query = f"INSERT INTO {self.__class__.__name__} ({', '.join(self.__dict__.keys())}) VALUES ({', '.join(['?' for key in self.__dict__.keys()])})"
@@ -60,8 +81,7 @@ class MODEL:
 
 
 class Department(MODEL):
-    def __init__(self, connection, id, name, phone):
-        super().__init__(connection)
+    def __init__(self, id, name, phone):
         self.id = id
         self.name = name
         self.phone = phone
@@ -71,8 +91,8 @@ class Department(MODEL):
 
 
 class Employee:
-    def __init__(self, connection, id, account, department, phone):
-        super().__init__(connection)
+    def __init__(self, conn, id, account, department, phone):
+        super().__init__(conn)
         self.id = id
         self.account = account
         self.department = department
