@@ -13,10 +13,11 @@ class selection:
         column_names = [column.name for column in table.columns]
         result = result.fetchall()
         if result == []:
-            print("No data found!")
+            return "No data found!"
         for data in result:
             out = list(zip(column_names,data))
-            print("    ".join(f"{key},{value}" for key,value in out).replace(","," : "))
+            return out
+            # return "    ".join(f"{key},{value}" for key,value in out).replace(","," : ")
 
 
 

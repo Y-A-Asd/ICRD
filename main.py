@@ -18,13 +18,14 @@ from temp_data.read_json import manage_data
 # time.sleep(2)
 
 Base.metadata.create_all(engine)
-# with engine.connect() as conn:
+with engine.connect() as conn:
     # temp dat
     # manage_data(conn)
 
     #selection
-    # select = selection(conn)
-    # select.select("department", id=3)
+    select = selection(conn)
+    res = select.select("department", id=3)
+    print (dict(res))
 
 
     #updation
@@ -35,11 +36,11 @@ Base.metadata.create_all(engine)
     # delp = Deletion(conn)
     # delp.delete("department", id=5)
 
-db=DatabaseConnectionManager(engine)
-model = MODEL(db)
-Department.conn = db
-d= Department.get(name="Dabfeed",id=4)
-print(d)
+# db=DatabaseConnectionManager(engine)
+# model = MODEL(db)
+# Department.conn = db
+# d= Department.get(name="Dabfeed",id=4)
+# print(type(Department.get(name="Dabfeed",id=3)))
 
 
 

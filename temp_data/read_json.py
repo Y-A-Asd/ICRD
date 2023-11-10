@@ -3,7 +3,7 @@ from core.crudORM.insertion import Insertion
 
 def manage_data(conn):
     insertion = Insertion(conn)
-    with open("temp_data/data_sample.json", "r") as file:
+    with open("data_sample.json", "r") as file:
         data = json.load(file)
     for i in data:
         table = i["model"].split(".")[1]
