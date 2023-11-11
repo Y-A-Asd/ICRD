@@ -1,6 +1,7 @@
 from core.database.database_engines import DatabaseConnectionManager
-from core.database.classes import Employee,MODEL,Department
-db = DatabaseConnectionManager()
+from core.database.classes import Employee, MODEL, Department
+import time
+
 
 q1 = '''SELECT SUM(total_dept) "total_dept" FROM (
 SELECT employee,SUM(base::DECIMAL+tax::DECIMAL+insurance::DECIMAL+overtime::DECIMAL) 
@@ -59,15 +60,17 @@ q8 = '''WITH CTE AS (
 FROM CTE
 WHERE delta_rank = 1'''
 
-q9 = '''SELECT E.id, E.account, E.phone,
-       (EXTRACT(HOUR FROM A.in_time::TIME) - 
-       EXTRACT(HOUR FROM %s::TIME)) :: INT || ':' ||
-       (EXTRACT(MINUTE FROM A.in_time::TIME) - 
-       EXTRACT(MINUTE FROM %s::TIME)) :: INT || ':' ||
-       (EXTRACT(SECOND FROM A.in_time::TIME) - 
-       EXTRACT(SECOND FROM %s::TIME)) :: INT AS time_diff
-FROM "Employee" E
-JOIN public."Attendance" A ON E.id = A.employee'''
+q9 = '''WITH CTE AS (
+SELECT E.id, E.account, E.phone,
+       (EXTRACT(HOUR FROM A.in_time::TIME) -
+       EXTRACT(HOUR FROM %s::TIME)) :: INT * INTERVAL '1 hour'+
+       (EXTRACT(MINUTE FROM A.in_time::TIME) -
+       EXTRACT(MINUTE FROM %s::TIME)) :: INT * INTERVAL '1 minute'+
+       (EXTRACT(SECOND FROM A.in_time::TIME) -
+       EXTRACT(SECOND FROM %s::TIME)) :: INT  * INTERVAL '1 second' AS time_diff
+FROM "Employee" E JOIN public."Attendance" A ON E.id = A.employee)
+
+SELECT id, SUM(time_diff) as time_diff FROM CTE GROUP BY id ORDER BY time_diff LIMIT 1'''
 
 q10 = '''SELECT E.id FROM "Employee" E
 WHERE E.id NOT IN (
@@ -75,59 +78,117 @@ SELECT employee FROM "Employeeprojectrelation")'''
 
 
 
-MODEL.conn = db
+
+def query1(db, q1):
+    data = db.execute_without_commit(q1)
+    return {"total_dept": float(data.fetchone()[0])}
 
 
-# data = db.execute_without_commit(q1)
-# result1={"total_dept": float(data.fetchone()[0])}
-# print(result1)
-#
-# data = db.execute_without_commit(q2,params=[int(input("enter value: "))])
-# result2={"total_overtime": float(data.fetchone()[0])}
-# print(result2)
-#
-# data = db.execute_without_commit(q3)
-# result3={"total": data.fetchone()[0]}
-# print(result3)
-#
-# try:
-#     data = db.execute_without_commit(q4,params=[int(input("enter value: "))])
-#     result4={"total_hours": data.fetchone()[1]}
-#     print(result4)
-# except TypeError:
-#     print({"total_hours": None})
-#
-#Todo :list of obj
-# data = db.execute_without_commit(q5,params=[int(input("enter value: "))])
-# result5= data.fetchall()
-# temp_result = []
-# for i in result5:
-#     temp_result.append({i[0]:float(i[1])})
-# print(temp_result)
-#
-# data = db.execute_without_commit(q6)
-# result6=data.fetchall()
-# id = result6[0][0]
-# total_hours = result6[0][1]
-# e = Employee.from_id(id)
-# e.total_hours = total_hours
-# print(e)
-#
-# data = db.execute_without_commit(q7)
-# result7=data.fetchall()
-# id = result7[0][0]
-# total = float(result7[0][1])
-# d = Department.from_id(id)
-# d.total = total
-# print(d)
-#
-# data = db.execute_without_commit(q8)
-# result8=data.fetchone()
-# id = result8[0]
-# d = Department.from_id(id)
-# print(d)
+# Function 2
+def query2(db, q2):
+    value = input("waiting for input: ")
+    data = db.execute_without_commit(q2, params=[int(value)])
+    return {"total_overtime": float(data.fetchone()[0])}
 
-h=input("enter value: ")
-data = db.execute_without_commit(q9,[h,h,h])
-result9=data.fetchall()
-print(result9)
+
+# Function 3
+def query3(db,q3):
+    print(db)
+    data = db.execute_without_commit(q3)
+    return {"total": data.fetchone()[0]}
+
+
+# Function 4
+def query4(db, q4):
+    try:
+        value = input("waiting for input: ")
+        data = db.execute_without_commit(q4, params=[int(value)])
+        return {"total_hours": data.fetchone()[1]}
+    except TypeError:
+        return {"total_hours": None}
+
+
+# Function 5
+def query5(db, q5):
+    value = input("waiting for input: ")
+    data = db.execute_without_commit(q5, params=[int(value)])
+    result5 = data.fetchall()
+    temp_result = []
+    for index, value in enumerate(result5):
+        temp_result.append(Employee.from_id(value[0]))
+        temp_result[index].total = value[1]
+        print(temp_result[index])
+        print(f"total amount for employee {temp_result[index].id}: {temp_result[index].total}")
+    return temp_result
+
+
+# Function 6
+def query6(db, q6):
+    data = db.execute_without_commit(q6)
+    result6 = data.fetchall()
+    id = result6[0][0]
+    total_hours = result6[0][1]
+    e = Employee.from_id(id)
+    e.total_hours = total_hours
+    return e
+
+
+# Function 7
+def query7(db, q7):
+    data = db.execute_without_commit(q7)
+    result7 = data.fetchall()
+    id = result7[0][0]
+    total = float(result7[0][1])
+    d = Department.from_id(id)
+    d.total = total
+    return d
+
+
+# Function 8
+def query8(db, q8):
+    data = db.execute_without_commit(q8)
+    result8 = data.fetchone()
+    id = result8[0]
+    d = Department.from_id(id)
+    return d
+
+
+# Function 9
+def query9(db, q9):
+    h = input("waiting for input: ")
+    data = db.execute_without_commit(q9, [h, h, h])
+    result9 = data.fetchone()
+    id = result9[0]
+    e = Employee.from_id(id)
+    return e
+
+
+# Function 10
+def query10(db, q10):
+    data = db.execute_without_commit(q10)
+    result10 = data.fetchall()
+    return {"total": len(result10)}
+
+
+def run_all_query():
+    db = DatabaseConnectionManager()
+    MODEL.conn = db
+    functions = {
+        "query1": query1,
+        "query2": query2,
+        "query3": query3,
+        "query4": query4,
+        "query5": query5,
+        "query6": query6,
+        "query7": query7,
+        "query8": query8,
+        "query9": query9,
+        "query10": query10}
+    queries = [q1, q2, q3, q4, q5, q6, q7, q8, q9, q10]
+    funcstorun = zip(functions,queries)
+    for func, queries in funcstorun:
+        time.sleep(0.5)
+        print(f"\n\n{func.upper()}!\n")
+        result = functions[func](db,queries)
+        print(result)
+

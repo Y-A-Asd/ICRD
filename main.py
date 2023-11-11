@@ -5,6 +5,7 @@ from core.crudORM.selection import selection
 from core.crudORM.updation import Updation
 from core.crudORM.deletion import Deletion
 from unit_test.test import Test_Model
+from core.query.query_gen import run_all_query
 import time
 from temp_data.read_json import manage_data
 import os
@@ -24,8 +25,10 @@ def fundamental():
     print("RUNING SELF TEST...",end="")
     pytest.main(["-q","unit_test/test.py::Test_Model"])
     time.sleep(1)
+    print("RUNING QUERIES")
+    run_all_query()
 
-
+#300,116,2000,09:00:00
 
 
 
