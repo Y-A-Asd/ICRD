@@ -16,7 +16,7 @@ class Deletion:
         except:
             print("UPCOMMING")
             return
-        status = input("R u sure? (y/n): ")
+        status = "y"
         if status.lower() == "y":
             self.conn.commit()
         else:

@@ -3,6 +3,7 @@ from core.database.classes_structure import Base
 from core.database.classes import Department,Payslip, MODEL
 from temp_data.read_json import manage_data
 from core.crudORM.selection import selection
+from core.crudORM.insertion import Insertion
 from core.crudORM.updation import Updation
 from core.crudORM.deletion import Deletion
 import pytest
@@ -13,21 +14,27 @@ class Test_SQLALchemy:
     Base.metadata.create_all(engine)
     conn = engine.connect()
 
-    def test_input_jso(self):
-        manage_data(self.conn)
-
     def test_selection(self):
         select = selection(self.conn)
         res = select.select("department", id=3)
         assert dict(res)["id"] ==3 and dict(res)["name"] =="Dabfeed"
+    def test_insertion(self):
+        insertion = Insertion(self.conn)
+        column_data = {"id":99999999,"name":"temp_test","phone":00000000}
+        insertion.insert_data(table_name="department",column_data=column_data)
+        select = selection(self.conn)
+        res = select.select("department", id=99999999)
+        assert dict(res)["id"] == 99999999 and dict(res)["name"] == "temp_test"
+
+    def test_deletion(self):
+        dele = Deletion(self.conn)
+        dele.delete("department", id=99999999)
+
 
     # def test_updation(self):
     #     up = Updation(self.conn)
     #     up.update("department", id=5)
 
-    # def test_deletion(self):
-    #     dele = Deletion(self.conn)
-    #     dele.delete("department", id=3)
 
 
 class Test_Model:

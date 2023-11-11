@@ -1,12 +1,9 @@
 from core.database.database_engines import engine,DatabaseConnectionManager
 from core.database.classes_structure import Base
-from core.database.classes import Attendance,Department,MODEL
-from core.crudORM.selection import selection
-from core.crudORM.updation import Updation
-from core.crudORM.deletion import Deletion
-from unit_test.test import Test_Model
+from temp_data.json_to_db import json_to_db_self_orm
 from core.query.query_gen import run_all_query
 import time
+from core.crudORM.selection import selection
 from temp_data.read_json import manage_data
 import os
 import subprocess
@@ -16,15 +13,18 @@ import pytest
 def fundamental():
     print("RUNING POSTGRESQL SERVICE!")
     subprocess.run("systemctl start postgresql",shell= True)
-    time.sleep(1)
+    time.sleep(0.5)
     print("INITIALISING DATABASE ENGINE!")
-    time.sleep(1)
+    time.sleep(0.5)
     print("MAKING TABLES READY!")
     Base.metadata.create_all(engine)
-    time.sleep(1)
+    time.sleep(0.5)
+    print("READING DATA FROM JSON!")
+    json_to_db_self_orm()
+    time.sleep(0.5)
     print("RUNING SELF TEST...",end="")
-    pytest.main(["-q","unit_test/test.py::Test_Model"])
-    time.sleep(1)
+    pytest.main(["-q","unit_test/test.py"])
+    time.sleep(0.5)
     print("RUNING QUERIES")
     run_all_query()
 
@@ -33,6 +33,8 @@ def fundamental():
 
 
 
+if __name__ == "__main__":
+    fundamental()
 
 
 
@@ -43,7 +45,8 @@ def fundamental():
 
 
 
-fundamental()
+# d = Department(**{"id":9,"name":"dd","phone":900276235})
+# print(d)
 # with engine.connect() as conn:
     # temp dat
     # manage_data(conn)
