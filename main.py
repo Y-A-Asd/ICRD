@@ -1,4 +1,4 @@
-from core.database.database_engines import engine,DatabaseConnectionManager
+from core.database.database_engines import engine,start_postgresql,is_postgresql_running,DatabaseConnectionManager
 from core.database.classes_structure import Base
 from temp_data.json_to_db import json_to_db_self_orm
 from core.query.query_gen import run_all_query
@@ -12,7 +12,9 @@ import pytest
 
 def fundamental():
     print("RUNING POSTGRESQL SERVICE!")
-    subprocess.run("systemctl start postgresql",shell= True)
+    start_postgresql()
+    if not is_postgresql_running():
+        exit("PostgreSQL service is not running. Exiting...")
     time.sleep(0.5)
     print("INITIALISING DATABASE ENGINE!")
     time.sleep(0.5)
@@ -31,17 +33,8 @@ def fundamental():
 #300,116,2000,09:00:00
 
 
-
-
 if __name__ == "__main__":
     fundamental()
-
-
-
-
-
-
-
 
 
 
@@ -79,7 +72,3 @@ if __name__ == "__main__":
 # d.phone=111111111
 # d.update()
 # print(d)
-
-
-
-
