@@ -1,28 +1,4 @@
-from typing import Any, List,Optional
-from core.database.engine import engine
-import dotenv
-import psycopg2
-import os
-dotenv.load_dotenv()
-host = os.getenv("host")
-database = os.getenv("database")
-password = os.getenv("password")
-user = os.getenv("user")
-
-
-class DatabaseConnectionManager:
-    def __init__(self, engin: engine):
-        self.conn = psycopg2.connect(database=database,user=user,host=host)
-
-    def close(self):
-        self.conn.close()
-
-    def execute(self, query, params=[]):
-        with self.conn as conn:
-            cursor = conn.cursor()
-            cursor.execute(query, params)
-            conn.commit()
-            return cursor
+from typing import Any, List, Optional
 
 
 class MODEL:
@@ -31,55 +7,53 @@ class MODEL:
     """
     __conn = None
 
-    def __init__(self, conn: DatabaseConnectionManager) -> None:
-        self.conn = conn
-
     @classmethod
     def get(cls, **kwargs) -> Any:
         table = cls.__name__
         query = f'SELECT * FROM "{table}" WHERE {"AND ".join([f"{key} = %s" for key in kwargs.keys()])};'
         params = list(kwargs.values())
-        result = cls.conn.execute(query, params)
+        result = cls.conn.execute_without_commit(query, params)
         data = result.fetchall()
-        try :
-            return cls(*data[0]) # MAGIC :)
+        try:
+            return cls(*data[0])  # MAGIC :)
         except IndexError:
             return f"Multiple objects found for {table} with kwargs {kwargs}"
 
     @classmethod
     def from_id(cls, id: int) -> List:
-        query = f"SELECT * FROM {cls.__name__} WHERE id = ?"
+        table = cls.__name__
+        query = f'SELECT * FROM "{table}" WHERE id = %s'
         params = [id]
-        results = cls.conn.execute(query, params)
-        if len(results) == 1:
-            return cls(cls.conn, **results[0])
-        else:
-            return None
-
+        results = cls.conn.execute_without_commit(query, params)
+        data = results.fetchall()
+        try:
+            return cls(*data[0])  # MAGIC :)
+        except IndexError:
+            return f"objects not found for {table} "
 
     @classmethod
     def filter(cls, **kwargs):
-        cursor = cls.conn.cursor()
-        query = f"SELECT * FROM {cls.__class__.__name__} WHERE {', '.join([f'{key}=?' for key in kwargs.keys()])}"
+        query = f'SELECT * FROM "{cls.__name__}" WHERE {"AND ".join([f"{key}= %s" for key in kwargs.keys()])}'
         params = list(kwargs.values())
-
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
-
-        return [cls(cls.conn, **{key: value for key, value in zip(cls.__dict__.keys(), row)}) for row in rows]
+        results = cls.conn.execute_without_commit(query, params)
+        data = results.fetchall()
+        obj_list = []
+        for obj in data:
+            obj_list.append(cls(*obj))
+        return obj_list
 
     def save(self) -> None:
-        query = f"INSERT INTO {self.__class__.__name__} ({', '.join(self.__dict__.keys())}) VALUES ({', '.join(['?' for key in self.__dict__.keys()])})"
+        query = f'INSERT INTO "{self.__class__.__name__}" ({", ".join(self.__dict__.keys())}) VALUES ({", ".join(["%s" for key in self.__dict__.keys()])})'
         params = list(self.__dict__.values())
         self.conn.execute(query, params)
 
     def update(self) -> None:
-        query = f"UPDATE {self.__class__.__name__} SET {', '.join([f'{key}=?' for key in self.__dict__.keys()])} WHERE id = ?"
+        query = f'UPDATE "{self.__class__.__name__}" SET {", ".join([f"{key}=%s" for key in self.__dict__.keys()])} WHERE id = %s'
         params = list(self.__dict__.values()) + [self.id]
         self.conn.execute(query, params)
 
     def delete(self) -> None:
-        query = f"DELETE FROM {self.__class__.__name__} WHERE id = ?"
+        query = f'DELETE FROM "{self.__class__.__name__}" WHERE id = %s'
         params = [self.id]
         self.conn.execute(query, params)
 
@@ -95,8 +69,7 @@ class Department(MODEL):
 
 
 class Employee(MODEL):
-    def __init__(self, conn, id, account, department, phone):
-        super().__init__(conn)
+    def __init__(self, id, account, department, phone):
         self.id = id
         self.account = account
         self.department = department
@@ -107,8 +80,7 @@ class Employee(MODEL):
 
 
 class Project(MODEL):
-    def __init__(self, conn, id, title, department, estimated_end_time, end_time):
-        super().__init__(conn)
+    def __init__(self, id, title, department, estimated_end_time, end_time):
         self.id = id
         self.title = title
         self.department = department
@@ -120,8 +92,7 @@ class Project(MODEL):
 
 
 class Employeeprojectrelation(MODEL):
-    def __init__(self, conn, id, employee, project, hours, role):
-        super().__init__(conn)
+    def __init__(self, id, employee, project, hours, role):
         self.id = id
         self.employee = employee
         self.project = project
@@ -133,8 +104,7 @@ class Employeeprojectrelation(MODEL):
 
 
 class Attendance(MODEL):
-    def __init__(self, conn, id, employee, date, in_time, out_time, late_cause):
-        super().__init__(conn)
+    def __init__(self, id, employee, date, in_time, out_time, late_cause=None):
         self.id = id
         self.employee = employee
         self.date = date
@@ -147,8 +117,7 @@ class Attendance(MODEL):
 
 
 class Salary(MODEL):
-    def __init__(self, conn, id, employee, base, tax, insurance, overtime):
-        super().__init__(conn)
+    def __init__(self, id, employee, base, tax, insurance, overtime):
         self.id = id
         self.employee = employee
         self.base = base
@@ -161,7 +130,8 @@ class Salary(MODEL):
 
 
 class Payment(MODEL):
-    def __init__(self, conn, amount, account_number, payment_type, description, date):
+    def __init__(self, id,amount, account_number, payment_type, description, date):
+        self.id = id
         self.amount = amount
         self.account_number = account_number
         self.payment_type = payment_type

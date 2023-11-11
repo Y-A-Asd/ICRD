@@ -1,31 +1,54 @@
-from core.database.engine import engine
+from core.database.database_engines import engine,DatabaseConnectionManager
 from core.database.classes_structure import Base
-from core.database.classes import Department,MODEL,DatabaseConnectionManager
+from core.database.classes import Attendance,Department,MODEL
 from core.crudORM.selection import selection
 from core.crudORM.updation import Updation
 from core.crudORM.deletion import Deletion
+from unit_test.test import Test_Model
 import time
 from temp_data.read_json import manage_data
+import os
+import subprocess
+import pytest
 
 
-# print("WE ARE WORKING PLEASE WAIT ",end=" ")
-# time.sleep(1)
-# print("...",end="")
-# time.sleep(1)
-# print("...",end="")
-# time.sleep(1)
-# print("...",end="")
-# time.sleep(2)
+def fundamental():
+    print("RUNING POSTGRESQL SERVICE!")
+    subprocess.run("systemctl start postgresql",shell= True)
+    time.sleep(1)
+    print("INITIALISING DATABASE ENGINE!")
+    time.sleep(1)
+    print("MAKING TABLES READY!")
+    Base.metadata.create_all(engine)
+    time.sleep(1)
+    print("RUNING SELF TEST...",end="")
+    pytest.main(["-q","unit_test/test.py::Test_Model"])
+    time.sleep(1)
 
-Base.metadata.create_all(engine)
-with engine.connect() as conn:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+fundamental()
+# with engine.connect() as conn:
     # temp dat
     # manage_data(conn)
 
     #selection
-    select = selection(conn)
-    res = select.select("department", id=3)
-    print (dict(res))
+    # select = selection(conn)
+    # res = select.select("department", id=3)
+    # print (dict(res))
 
 
     #updation
@@ -41,6 +64,15 @@ with engine.connect() as conn:
 # Department.conn = db
 # d= Department.get(name="Dabfeed",id=4)
 # print(type(Department.get(name="Dabfeed",id=3)))
+
+
+
+# db = DatabaseConnectionManager(engine)
+# MODEL.conn = db
+# d = Department.get(id=99999999)
+# d.phone=111111111
+# d.update()
+# print(d)
 
 
 
