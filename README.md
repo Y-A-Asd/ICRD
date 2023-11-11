@@ -141,15 +141,14 @@ Please refer to the [directory structure](#directory-structure) for details on t
 │   ├── crudORM
 │   │   ├── deletion.py
 │   │   ├── insertion.py
-│   │   ├── __pycache__
 │   │   ├── selection.py
 │   │   └── updation.py
 │   ├── database
 │   │   ├── classes.py
 │   │   ├── classes_structure.py
 │   │   ├── database_engines.py
-│   │   ├── database_structure.txt
-│   │   └── __pycache__
+│   │   └── database_structure.txt
+│   │   
 │   ├── log
 │   └── query
 │       ├── QUERY
@@ -157,11 +156,30 @@ Please refer to the [directory structure](#directory-structure) for details on t
 ├── main.py
 ├── temp_data
 │   ├── data_sample.json
-│   ├── __pycache__
-│   │   └── read_json.cpython-311.pyc
 │   └── read_json.py
 └── unit_test
-    ├── __pycache__
-    │   ├── test.cpython-311.pyc
-    │   └── test.cpython-311-pytest-7.4.3.pyc
     └── test.py
+## License
+
+This project is provided under the terms of the Custom Project License (CPL).
+
+You are free to:
+- Use this project for educational and non-commercial purposes.
+- Modify the code for personal or non-commercial use.
+
+You are not allowed to:
+- Use this project or its code for any commercial purposes without explicit permission from the project author.
+
+If you would like to use this project for commercial purposes, please contact the project author to discuss licensing options.
+
+This project is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+For more details, please contact the project author at [Contract](#contact).
+
+© [2023] [Yousof.A.Asadi]
+## Contact
+
+For any questions or inquiries, you can contact the project author:
+
+- GitHub: [github.com/Y-A-Asd](https://github.com/Y-A-Asd/)
+- Email: yosofasady2@gmail.com
