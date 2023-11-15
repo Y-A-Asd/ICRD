@@ -31,11 +31,14 @@ class DatabaseConnectionManager:
         self.conn.close()
 
     def execute(self, query, params=[]):
-        with self.conn as conn:
-            cursor = conn.cursor()
-            cursor.execute(query, params)
-            conn.commit()
-            return cursor
+        try:
+            with self.conn as conn:
+                cursor = conn.cursor()
+                cursor.execute(query, params)
+                conn.commit()
+                return cursor
+        except UniqueViolation:
+            pass
 
 
     def execute_without_commit(self,query,params=[]):

@@ -11,24 +11,30 @@ import pytest
 
 
 def fundamental():
-    print("RUNING POSTGRESQL SERVICE!")
+    print("RUNING POSTGRESQL SERVICE")
     start_postgresql()
     if not is_postgresql_running():
         exit("PostgreSQL service is not running. Exiting...")
+    print("DONE!\n")
     time.sleep(0.5)
-    print("INITIALISING DATABASE ENGINE!")
+    print("INITIALISING DATABASE ENGINE")
+    print("DONE!\n")
     time.sleep(0.5)
-    print("MAKING TABLES READY!")
+    print("MAKING TABLES READY")
     Base.metadata.create_all(engine)
+    print("DONE!\n")
     time.sleep(0.5)
     print("READING DATA FROM JSON!")
     json_to_db_self_orm()
+    print("DONE!\n")
     time.sleep(0.5)
-    print("RUNING SELF TEST...",end="")
+    print("RUNING SELF TEST...",)
     pytest.main(["-q","unit_test/test.py"])
+    print("DONE!\n")
     time.sleep(0.5)
     print("RUNING QUERIES")
     run_all_query()
+    print("\nY-A-Asd :)")
 
 #300,116,2000,09:00:00
 

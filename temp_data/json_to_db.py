@@ -27,12 +27,10 @@ def json_to_db_self_orm():
     for table,column_data in manage_data():
         table = getattr(sys.modules[__name__], table.capitalize()) #LIL MAGIC :)
         temp_obj: MODEL = table(**column_data)
-        try:
-            temp_obj.save()
-        except UniqueViolation:
-            pass
-        finally: count_data += 1
+        temp_obj.save()
+        count_data += 1
     print(count_data,"DATA WERE ADDED!")
+
 
 
 
