@@ -93,7 +93,6 @@ def query2(db, q2):
 
 # Function 3
 def query3(db,q3):
-    print(db)
     data = db.execute_without_commit(q3)
     return {"total": data.fetchone()[0]}
 
