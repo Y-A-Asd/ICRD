@@ -3,20 +3,13 @@ from core.database.classes import Employee, MODEL, Department
 import time
 
 
-q1 = '''SELECT SUM(total_dept) "total_dept" FROM (
-SELECT employee,SUM(base::DECIMAL+tax::DECIMAL+insurance::DECIMAL+overtime::DECIMAL) 
-as "total_dept"
-FROM "Salary" WHERE  id NOT IN(SELECT id FROM "Payslip")
-GROUP BY employee) AS total_depts'''
+q1 = '''SELECT SUM(base+overtime+tax+insurance) AS total FROM "Payslip" WHERE payment IS NOT NULL'''
 
-q2 = '''WITH overtimes AS (
-SELECT S.employee, SUM(P.overtime) overtime FROM "Salary" S 
-JOIN "Payslip" P ON S.id = P.salary
-GROUP BY S.employee HAVING SUM(P.overtime) >= %s)
-SELECT SUM(overtime) AS total_overtime FROM overtimes'''
+q2 = '''SELECT SUM(P.overtime) FROM "Payslip" P
+JOIN "Salary" S ON S.id=P.salary
+WHERE S.overtime > %s AND P.payment IS NOT NULL;'''
 
-q3 = '''SELECT SUM(base+overtime+tax+insurance) AS total FROM "Salary" WHERE id IN (
-SELECT salary FROM "Payslip" WHERE payment IS NOT NULL)'''
+q3 = '''SELECT SUM(amount) AS total FROM "Payment"'''
 
 q4 = '''SELECT employee, SUM(hours) AS total
 FROM "Employeeprojectrelation" WHERE employee = %s
@@ -47,30 +40,23 @@ SELECT D.id,D1.total_payment AS max_total
 FROM department_totals D1 JOIN "Department" D ON D.id = D1.department_id
 WHERE D1.total_payment = (SELECT MAX(total_payment) FROM department_totals) ORDER BY D.name LIMIT 1'''
 
-q8 = '''WITH CTE AS (
-    SELECT
-        D.id,
-        SUM(P.estimated_end_time - P.end_time) AS delta,
-        RANK() OVER (ORDER BY SUM(P.estimated_end_time - P.end_time) DESC) AS delta_rank
-    FROM
-        "Department" D
-        JOIN public."Project" P ON D.id = P.department
-    GROUP BY D.id
-) SELECT id, delta
-FROM CTE
-WHERE delta_rank = 1'''
+q8 = '''
+SELECT D.id, COUNT(P.id) AS delta,
+RANK() OVER (ORDER BY COUNT(P.id) DESC) AS delta_rank
+FROM "Department" D JOIN "Project" P ON D.id = P.department
+WHERE(P.estimated_end_time - P.end_time) > '00:00:00'::INTERVAL
+GROUP BY D.id ORDER BY delta_rank LIMIT 1;'''
 
-q9 = '''WITH CTE AS (
-SELECT E.id, E.account, E.phone,
-       (EXTRACT(HOUR FROM A.in_time::TIME) -
-       EXTRACT(HOUR FROM %s::TIME)) :: INT * INTERVAL '1 hour'+
-       (EXTRACT(MINUTE FROM A.in_time::TIME) -
-       EXTRACT(MINUTE FROM %s::TIME)) :: INT * INTERVAL '1 minute'+
-       (EXTRACT(SECOND FROM A.in_time::TIME) -
-       EXTRACT(SECOND FROM %s::TIME)) :: INT  * INTERVAL '1 second' AS time_diff
-FROM "Employee" E JOIN public."Attendance" A ON E.id = A.employee)
+q9 = '''WITH att AS(SELECT E.id,
+(EXTRACT(EPOCH FROM A.in_time - %s) * INTERVAL '1 second')::INTERVAL AS time_diff
+FROM "Employee" E
+JOIN "Attendance" A ON E.id = A.employee
+WHERE (EXTRACT(EPOCH FROM A.in_time - %s) * INTERVAL '1 second')::INTERVAL > '00:00:00'::INTERVAL)
 
-SELECT id, SUM(time_diff) as time_diff FROM CTE GROUP BY id ORDER BY time_diff LIMIT 1'''
+SELECT E.id,COUNT(att.time_diff) FROM "Employee" E
+JOIN att USING(id)
+GROUP BY E.id
+ORDER BY count , E.id LIMIT 1'''
 
 q10 = '''SELECT E.id FROM "Employee" E
 WHERE E.id NOT IN (
@@ -155,7 +141,7 @@ def query8(db, q8):
 # Function 9
 def query9(db, q9):
     h = input("waiting for input: ")
-    data = db.execute_without_commit(q9, [h, h, h])
+    data = db.execute_without_commit(q9, [h, h])
     result9 = data.fetchone()
     id = result9[0]
     e = Employee.from_id(id)
