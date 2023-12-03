@@ -1,0 +1,264 @@
+FETCH
+FETCH is like LIMIT but (limit is not standard!)
+OFFSET start { ROW | ROWS }
+FETCH { FIRST | NEXT } [ row_count ] { ROW | ROWS } ONLY
+
+
+ALIAS
+SELECT column_name alias_name
+FROM table_name;
+SELECT column_name AS alias_name
+FROM table_name;
+if u have space in name use -> column_name AS "column alias"
+alias can use for table too
+
+
+JOIN 
+we know inner,right,left join 
+self join -> we shold left join table with itself (search for more...)
+full join -> left join + right join
+cross join -> all comnination of some table
+natural join -> join to table based on same column name 
+
+
+SET OPERATION ("majmoeh")
+ UNION -> combine some table with same number of columns and removes all duplicate ("ejtema")
+ UNION ALL -> keep duplicate
+INTERSECT -> returns a single result set that has the rows appear in both result sets ("eshterak")
+ EXCEPT -> first - second ("tafazol")
+ exp:
+ SELECT * FROM most_popular_films
+ INTERSECT
+ SELECT * FROM top_rated_films;
+
+
+Grouping sets, Cube, and Rollup
+
+ grouping sets
+ let me start with exp:
+ SELECT brand,segment,SUM (quantity) FROM sales GROUP BYbrand,segment
+ UNION ALL
+ SELECT brand,NULL,SUM (quantity) FROM sales GROUP BY brand
+ UNION ALL
+ SELECT NULL, segment, SUM (quantity) FROM sales GROUP BY segment
+ UNION ALL
+ SELECT NULL,NULL,SUM (quantity) FROM sales;
+
+ the code up there is same as this:
+ SELECT brand,segment,SUM (quantity) FROM sales GROUP BY GROUPING SETS ((brand, segment),(brand),(segment)());
+
+CUBE
+ CUBE(c1,c2,c3)
+ GROUPING SETS (
+    (c1,c2,c3),
+    (c1,c2),
+    (c1,c3),
+    (c2,c3),
+    (c1),
+    (c2),
+    (c3),
+    ()
+ )
+ CUBE (brand, segment) -> GROUPING SETS ((brand, segment),(brand),(segment)())
+
+
+SUBCUERY
+ subquery -> write a query nested inside another query.
+ exists -> check for the existence of rows returned by a subquery.
+ all -> query data by comparing a value with a LIST of values returned by a subquery.
+ any(like IN operator) -> retrieve data by comparing a value with a SET of values returned by a subquery.
+
+CTE
+ cte -> temporary result set that you can reference within the context of a single SQL statement, especially complex queries.
+ recursive cte -> discuss the recursive query and learn how to apply it in various contexts.
+ exp:
+ facctorial in postgres
+ WITH RECURSIVE FactorialCTE AS (
+    SELECT 1 AS n, 1 AS result
+    UNION ALL
+    SELECT n + 1, (n + 1) * result
+    FROM FactorialCTE
+    WHERE n < 10
+ )
+ SELECT * FROM FactorialCTE;
+
+
+Transactions
+ BEGIN, COMMIT, and ROLLBACK
+ transactions ensure reliable and consistent data changes, preventing partial updates or data inconsistencies in case of failures
+ exp:
+ BEGIN;
+ INSERT INTO accounts(name, balance) VALUES('Alice', 10000);
+ -- commit the change (or roll it back later)
+ COMMIT;
+
+
+CSV
+IMPORT
+first create table then
+COPY {TABLE_NAME}({LIST OF COLUMNS}) FROM '{PATH}' DELIMITER ',' CSV HEADER;
+EXPORT
+COPY {TABLE_NAME}({LIST OF COLUMNS}) TO '{PATH}' DELIMITER ',' CSV HEADER;
+if you want all columns
+COPY {TABLE_NAME} TO '{PATH}' DELIMITER ',' CSV HEADER;
+this can work too:
+\copy (SELECT * FROM {TABLE_NAME}) to '{PATH}' with csv
+
+
+Managing Tables
+ CREATE TABLE AS -> The CREATE TABLE AS statement creates a new table and fills it with the data returned by a query.
+
+ SELECT INTO -> create a new table with the structure and data derived from a result set, you specify the new table name after the INTO keyword.
+ exp:
+ SELECT film_id, title, length INTO TEMP TABLE short_film FROM film WHERE length < 60 ORDER BY title;
+ Create Auto-increment Column - > CREATE TABLE table_name(id SERIAL); use (big,small)serial datatype
+
+ SEQUENCES ->
+ A sequence in PostgreSQL is a user-defined schema-bound object that generates a sequence of integers based on a specified specification.
+ CREATE SEQUENCE [ IF NOT EXISTS ] sequence_name
+    [ AS { SMALLINT | INT | BIGINT } ]
+    [ INCREMENT [ BY ] increment ]
+    [ MINVALUE minvalue | NO MINVALUE ]
+    [ MAXVALUE maxvalue | NO MAXVALUE ]
+    [ START [ WITH ] start ]
+    [ CACHE cache ]
+    [ [ NO ] CYCLE ]
+    [ OWNED BY { table_name.column_name | NONE } ]
+    exp:
+    CREATE TABLE order_details (
+    order_id SERIAL PRIMARY KEY,
+    item_id INT NOT NULL,
+    item_text VARCHAR NOT NULL,
+    price DECIMAL(10, 2) NOT NULL);
+
+    CREATE SEQUENCE order_item_id START 10 INCREMENT 10 MINVALUE 10 OWNED BY order_details.item_id;
+ search for more...
+
+
+DATE DATATYPE
+ CURRENT_DATE: NOW()::date; _ SELECT CURRENT_DATE;
+
+ FORMATING:
+ SELECT TO_CHAR(NOW() :: DATE, 'Mon dd, yyyy'); -> Jun 23, 2016
+ SELECT TO_CHAR(NOW() :: DATE, 'dd/mm/yyyy'); ->  23/06/2016
+
+ AGE
+ AGE -> AGE(birth_date) -> 36 years 5 mons 22 days
+ AGE -> AGE('2015-01-01',birth_date) 35 years (age in year taht time)
+
+ EXTRACT
+ EXTRACT(field FROM source)
+ see fields here -> https://www.postgresqltutorial.com/postgresql-date-functions/postgresql-extract/
+ source can be timestaps and interval
+
+ TIMESTAMP
+ The timestamp datatype allows you to store both date and time.
+ The timestamptz datatype is the timestamp with the time zone.
+ TIMEZONE ->SHOW TIMEZONE; -- SET timezone = 'America/Los_Angeles';
+ TIMEOFDAY() -> To get the time of day in the string format, you use the timeofday() function.
+
+ INTERVAL
+ INTERVAL '6 years 5 months 4 days 3 hours 2 minutes 1 second'; ->  6 years 5 mons 4 days 03:02:01
+ SELECT INTERVAL '2h 50m' + INTERVAL '10m'; -> 03:00:00
+ SELECT INTERVAL '2h 50m' - INTERVAL '50m'; -> 02:00:00
+ SELECT 600 * INTERVAL '1 minute'; -> 10:00:00
+
+ UUID
+ INSTALL EXTENTION -> CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+ exp: CREATE TABLE contacts (contact_id uuid DEFAULT uuid_generate_v4 (),....
+
+ ARRAY
+ Every data type has its own companion array type e.g., integer has an integer[]
+ exp:
+ INSERT INTO contacts (name, phones) VALUES('John Doe',ARRAY [ '(408)-589-5846','(408)-589-5555' ]);
+ another way:
+ INSERT INTO contacts (name, phones) VALUES('Lily Bush','{"(408)-589-5841"}'),('William Gate','{"(408)-589-5842","(408)-589-58423"}');
+ SELECT name,phones FROM contacts; -> William Gate | {(408)-589-5842,(408)-589-58423}
+                                      John Doe     | {(408)-589-5846,(408)-589-5555}
+ JSON
+ The operator -> returns JSON object field by key. (JSON)
+ The operator ->> returns JSON object field by text. (TEXT)
+
+
+Conditional Expressions
+
+ CASE -> It allows you to add if-else logic to the query to form a powerful query
+ exp:
+ SELECT title,
+       rating,
+       CASE rating
+           WHEN 'G' THEN 'General Audiences'
+           WHEN 'PG' THEN 'Parental Guidance Suggested'
+           WHEN 'PG-13' THEN 'Parents Strongly Cautioned'
+           WHEN 'R' THEN 'Restricted'
+           WHEN 'NC-17' THEN 'Adults Only'
+       END rating_description
+ FROM film
+ ORDER BY title;
+
+ COALESCE -> It returns the first argument that is not null!
+ exp : SELECT COALESCE (NULL, 2 , 1); -> 2
+
+ NULLIF -> The NULLIF function returns a null value if argument_1 equals to argument_2, otherwise it returns argument_1.
+ exp:
+ SELECT NULLIF (1, 1); -> return NULL
+ SELECT NULLIF (1, 0); -> return 1
+ SELECT NULLIF ('A', 'B'); -> return A
+
+ TYPECAST
+ '100'::INTEGER
+ CAST ('100' AS INTEGER)
+
+
+PSQL COMMANDS
+
+\l                  -> list of all databases
+\d                  -> list of tables   ->\dt only show tables and not sequence, view and ...
+\d <table_name>     ->
+\c <dbname>         -> connect to database
+\i <filename>       -> execute psql commands from a file
+\?                  -> help
+\q                  -> exit
+
+ #Y-A-Asd :)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
